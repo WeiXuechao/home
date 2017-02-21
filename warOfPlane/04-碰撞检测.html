@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        #startdiv{
+            width: 320px;
+            height: 568px;
+            background: url(image/开始背景.png) no-repeat;
+        }
+        #content{
+            width: 320px;
+            height: 568px;
+            position: absolute;
+            top: 5px;
+            left: 500px;
+        }
+        #btstart{
+            width: 150px;
+            height: 30px;
+            background: burlywood;
+            border-radius: 30px;
+            position: absolute;
+            top:450px;
+            left:80px;
+        }
+        #maindiv{
+            width: 320px;
+            height:568px;
+            background: url(image/background_1.png);
+            position:absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            overflow:hidden;
+        }
+        #enddiv{
+            width: 200px;
+            height:200px;
+            position: absolute;
+            top: 300px;
+            left: 60px;
+            display: none;
+        }
+        #btrestart{
+            width: 150px;
+            height: 30px;
+            background: burlywood;
+            border-radius: 30px;
+            z-index: 10000;
+        }
+        #jifen{
+            position: absolute;
+            width: 200px;
+            height: 50px;
+            top: 0;
+            left: 0;
+        }
+        #cmd{
+            width: 320px;
+            height:568px;
+            position:absolute;
+            top: 0;
+            left: 0;
+            z-index: 100000;
+        }
+    </style>
+
+</head>
+<body>
+<div id="content">
+    <div id="startdiv">
+        <input id="btstart" type="button" value="开始游戏"/>
+    </div>
+    <div id="maindiv">
+        <div id="cmd"></div>
+    </div>
+    <div id="jifen">
+        积分：<span id="jifen1">0</span>
+    </div>
+    <div id="enddiv">
+        游戏结束;积分<span id="jifen2">0</span>
+        <div>
+            <input id="btrestart" type="button" value="重新开始"/>
+        </div>
+    </div>
+</div>
+<script>
+    var oBtStart=document.getElementById("btstart");
+    var oMainDiv=document.getElementById("maindiv");
+    var oCMD=document.getElementById("cmd");
+    var oJf=document.getElementById("jifen1");
+    var oJf2=document.getElementById("jifen2");
+    var oEndDiv=document.getElementById("enddiv");
+    var myPlan;
+    var timer;
+    var arrBullet=[];
+    var arrEnemy=[];
+    var total=0;
+
+    var enemySpeed=5;
+    var bulletSpeed=20;
+
+    oBtStart.onclick=function(){
+        oMainDiv.style.display="block";
+        myPlan=document.createElement("img");
+        myPlan.src="image/我的飞机.gif";
+        myPlan.style.position="absolute";
+        //320 160-33  568 -80
+        myPlan.style.left="127px";
+        myPlan.style.top="418px"
+        oMainDiv.appendChild(myPlan);
+        start();
+    }
+
+    var index=0;
+    var enemyIndex=0;
+    var backY=1;
+    var flag=true;
+    function start(){
+        clearInterval(timer);
+        oCMD.onmousemove=function(e){
+            //获取鼠标在同名遮罩的相对位置；
+            //遮罩的位置跟主界面的位置是重合的；maindiv
+            if(flag){
+                var oX= e.offsetX-33;
+                var oY= e.offsetY-40;
+                myPlan.style.left=oX+"px";
+                myPlan.style.top=oY+"px";
+            }
+        }
+        oCMD.onclick=function(){
+            flag=false;
+            myPlan.style.zIndex=100005;
+        }
+        myPlan.onclick=function(){
+            flag=true;
+            myPlan.style.zIndex=10000;
+        }
+        timer=setInterval(function(){
+            if(flag){
+                oMainDiv.style.backgroundPositionY=backY+++"px";
+                index++;
+                moveBullet();
+                createBullet();
+                if(index%20==0){
+                    createEnemy();
+                }
+                moveEnemy();
+                check();
+            }
+        },30)
+    }
+
+    function createBullet(){
+        var bullet=document.createElement("img");
+        bullet.src="image/bullet1.png";
+        bullet.style.position="absolute";
+        bullet.style.left=myPlan.offsetLeft+myPlan.offsetWidth/2-3+"px";
+        bullet.style.top=myPlan.offsetTop-bulletSpeed+"px";
+        oMainDiv.appendChild(bullet);
+        arrBullet.push(bullet);
+    }
+
+    function moveBullet(){
+        for(var i=0;i<arrBullet.length;i++){
+            //给一个匀速20；如果发现top值小于-14 也就是整个子弹已经移出顶部。这个时候，我们删除子弹；
+            //删除子弹：1，页面中移出这个img；2.arrBullet 移出；
+            var nTop=arrBullet[i].offsetTop-20;
+            if(nTop<-14){
+                oMainDiv.removeChild(arrBullet[i]);
+                arrBullet.splice(i,1);
+                i--;
+            }else{
+                arrBullet[i].style.top=nTop+"px";
+            }
+        }
+    }
+
+    function createEnemy(){
+        enemyIndex++;
+        //1 5 20
+        var enemy=document.createElement("img");
+        var randomLeft;
+        if(enemyIndex%20==0){
+            //创建一个大飞机
+            randomLeft=Math.floor(Math.random()*210);
+            enemy.src="image/enemy2_fly_1.png";
+            enemy.boomSrc="image/大飞机爆炸.gif";
+            enemy.src1="image/大飞机挨打.png";
+            enemy.style.top="-110px";
+            enemy.HP=20;
+            enemy.score=200;
+        }else if(enemyIndex%5==0){
+            //创建中飞机
+            randomLeft=Math.floor(Math.random()*274);
+            enemy.src="image/enemy3_fly_1.png";
+            enemy.boomSrc="image/中飞机爆炸.gif";
+            enemy.src1="image/中飞机挨打.png";
+            enemy.style.top="-46px";
+            enemy.HP=5;
+            enemy.score=50;
+        }else{
+            //创建小飞机
+            randomLeft=Math.floor(Math.random()*287);
+            enemy.src="image/enemy1_fly_1.png";
+            enemy.boomSrc="image/小飞机爆炸.gif";
+            enemy.style.top="-34px";
+            enemy.HP=1;
+            enemy.score=10;
+        }
+        enemy.style.left=randomLeft+"px";
+        enemy.style.position="absolute";
+        oMainDiv.appendChild(enemy);
+        arrEnemy.push(enemy);
+
+    }
+
+    function moveEnemy(){
+        for(var i=0;i<arrEnemy.length;i++){
+            if(arrEnemy[i].boom){
+                arrEnemy[i].index-=1;
+                if(arrEnemy[i].index==0){
+                    oMainDiv.removeChild(arrEnemy[i]);
+                    arrEnemy.splice(i,1);
+                    i--;
+                }
+            }else{
+                var nTop=arrEnemy[i].offsetTop+enemySpeed;
+                if(nTop>568){
+                    oMainDiv.removeChild(arrEnemy[i]);
+                    arrEnemy.splice(i,1);
+                    i--;
+                }else {
+                    arrEnemy[i].style.top=arrEnemy[i].offsetTop+enemySpeed+"px";
+                }
+            }
+
+        }
+    }
+
+    function check(){
+        //子弹的右边缘 需要 比 敌机的左边缘大。
+        //子弹的左边缘 需要比 敌机的 右边缘小；
+        //子弹的下边缘 需要比 敌机的上边缘 大
+        //子弹的上边缘  比 敌机的下边缘  小；
+        //js
+        //子弹很多！  敌机多个！
+        for(var j=0;j<arrBullet.length;j++){
+            //对于某个子弹，跟所有的敌机检测，看是否打中敌机
+            for(var i=0;i<arrEnemy.length;i++){
+                if(arrEnemy[i].boom) continue;
+                //检测 arrEnemy[i]  arrBullet[j] 是否碰撞？
+                if(arrBullet[j].offsetLeft+arrBullet[j].offsetWidth>arrEnemy[i].offsetLeft){
+                    if(arrBullet[j].offsetLeft<arrEnemy[i].offsetLeft+arrEnemy[i].offsetWidth){
+                        if(arrBullet[j].offsetTop+arrBullet[j].offsetHeight>arrEnemy[i].offsetTop){
+                            if(arrBullet[j].offsetTop<arrEnemy[i].offsetTop+arrEnemy[i].offsetHeight){
+                                //碰撞了
+                                //子弹 消失！
+                                //飞机
+                                oMainDiv.removeChild(arrBullet[j]);
+                                arrBullet.splice(j,1);
+                                j--;
+                                /*oMainDiv.removeChild(arrEnemy[i]);
+                                arrEnemy.splice(i,1);*/
+                                arrEnemy[i].HP--;
+                                if(arrEnemy[i].HP<=0){
+                                    arrEnemy[i].src=arrEnemy[i].boomSrc;
+                                    arrEnemy[i].boom=true;
+                                    arrEnemy[i].index=20;
+                                    total+=arrEnemy[i].score;
+                                    oJf.innerHTML=total;
+                                }else{
+                                    arrEnemy[i].src=arrEnemy[i].src1;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for(var k=0;k<arrEnemy.length;k++){
+            if(arrEnemy[k].boom) continue;
+            //子弹的右边缘 需要 比 敌机的左边缘大。
+            //子弹的左边缘 需要比 敌机的 右边缘小；
+            //子弹的下边缘 需要比 敌机的上边缘 大
+            //子弹的上边缘  比 敌机的下边缘  小；
+            if(myPlan.offsetLeft+myPlan.offsetWidth>arrEnemy[k].offsetLeft){
+                if(myPlan.offsetLeft<arrEnemy[k].offsetLeft+arrEnemy[k].offsetWidth){
+                    if(myPlan.offsetTop+myPlan.offsetHeight>arrEnemy[k].offsetTop){
+                        if(myPlan.offsetTop<arrEnemy[k].offsetTop+arrEnemy[k].offsetHeight){
+                            //我的飞机和敌机碰撞；
+                            //我的飞机炸了！
+                            myPlan.src="image/本方飞机爆炸.gif";
+                            oCMD.onmousemove=null;
+                            clearInterval(timer);
+                            oJf2.innerHTML=total;
+                            oEndDiv.style.display="block";
+                        }
+                    }
+                }
+            }
+        }
+    }
+</script>
+</body>
+</html>
